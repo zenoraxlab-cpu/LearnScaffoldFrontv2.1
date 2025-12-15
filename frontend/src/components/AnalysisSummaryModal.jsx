@@ -82,7 +82,7 @@ export function AnalysisSummaryModal({
             Analysis Summary
           </DialogTitle>
           <DialogDescription>
-            We've analyzed your file. Review the details below.
+            We have analyzed your file. Review the details below.
           </DialogDescription>
         </DialogHeader>
 
