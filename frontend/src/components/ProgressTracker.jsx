@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export function ProgressTracker({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRegistered, setEmailRegistered] = useState(false);
-  const [startTime] = useState(Date.now());
+  const startTimeRef = useRef(Date.now());
 
   // Poll for status updates
   const fetchStatus = useCallback(async () => {
