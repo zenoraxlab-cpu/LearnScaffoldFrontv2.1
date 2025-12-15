@@ -93,7 +93,7 @@ export function EmailNotificationModal({ open, onClose, onSubmit, estimatedTime 
           )}
 
           <div className="text-sm text-muted-foreground">
-            We'll send you a link that's valid for 24 hours. You can safely close this page after submitting.
+            We will send you a link that is valid for 24 hours. You can safely close this page after submitting.
           </div>
         </form>
 
