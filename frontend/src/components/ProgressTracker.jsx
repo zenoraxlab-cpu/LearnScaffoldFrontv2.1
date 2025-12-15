@@ -160,7 +160,7 @@ export function ProgressTracker({
           {emailRegistered && status?.status !== 'completed' && (
             <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm" data-testid="email-registered-notice">
               <Mail className="h-4 w-4" />
-              <span>We'll email you when your study plan is ready. You can safely close this page.</span>
+              <span>We will email you when your study plan is ready. You can safely close this page.</span>
             </div>
           )}
 
