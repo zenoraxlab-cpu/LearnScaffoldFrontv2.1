@@ -1,5 +1,9 @@
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API_BASE = `${BACKEND_URL}/api`;
+// src/services/api.js
+
+const BACKEND_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  'https://learnscaffold-backend.onrender.com';
+const API_BASE = BACKEND_URL; // Убрали /api — у тебя бэкенд без префикса!
 
 class ApiService {
   constructor() {
@@ -7,17 +11,18 @@ class ApiService {
   }
 
   async checkApiMode() {
-    // Try new API first, fall back to legacy if 404
     try {
-      const response = await fetch(`${API_BASE}/health`);
-      if (response.ok) {
+      const response = await fetch(`${API_BASE}/analyze/init`); // Просто проверяем доступность
+      if (response.ok || response.status === 405) {
+        // 405 тоже ок — значит эндпоинт существует
         this.useLegacyMode = false;
         return 'staged';
       }
     } catch (e) {
-      console.log('Health check failed, will try legacy mode on upload');
+      console.log('New API not available, trying legacy');
     }
-    return 'unknown';
+    this.useLegacyMode = true;
+    return 'legacy';
   }
 
   // ==================== Staged API (New) ====================
@@ -28,17 +33,18 @@ class ApiService {
 
     const response = await fetch(`${API_BASE}/analyze/init`, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     if (response.status === 404) {
-      // Fall back to legacy mode
       this.useLegacyMode = true;
       return this.legacyUpload(file);
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
+      const error = await response
+        .json()
+        .catch(() => ({ detail: 'Upload failed' }));
       throw new Error(error.detail || 'Upload failed');
     }
 
@@ -51,14 +57,13 @@ class ApiService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         task_id: taskId,
-        days: days,
-        hours_per_day: hoursPerDay
-      })
+        days,
+        hours_per_day: hoursPerDay,
+      }),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Generation failed' }));
-      throw new Error(error.detail || 'Generation failed');
+      throw new Error('Generation failed');
     }
 
     return response.json();
@@ -68,8 +73,7 @@ class ApiService {
     const response = await fetch(`${API_BASE}/analyze/status/${taskId}`);
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Status check failed' }));
-      throw new Error(error.detail || 'Status check failed');
+      throw new Error('Status check failed');
     }
 
     return response.json();
@@ -79,87 +83,50 @@ class ApiService {
     const response = await fetch(`${API_BASE}/notify/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        task_id: taskId,
-        email: email
-      })
+      body: JSON.stringify({ task_id: taskId, email }),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Email registration failed' }));
-      throw new Error(error.detail || 'Email registration failed');
+      throw new Error('Email registration failed');
     }
 
     return response.json();
   }
 
   getDownloadUrl(taskId) {
-    return `${API_BASE}/analyze/download/${taskId}`;
+    return `${API_BASE}/analyze/download/${taskId}`; // Если добавишь download эндпоинт
   }
 
-  // ==================== Legacy API (Fallback) ====================
+  // ==================== Legacy Fallback ====================
 
   async legacyUpload(file) {
+    // Твой legacy flow, если нужен
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE}/upload/`, {
+    const response = await fetch(`${API_BASE}/analyze/`, {
+      // Или /upload/ — как у тебя было
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
-      throw new Error(error.detail || 'Upload failed');
+      throw new Error('Legacy upload failed');
     }
 
     const data = await response.json();
-    
-    // Transform legacy response to match new API format
+    // Приводим к формату staged
     return {
-      task_id: data.file_id,
-      filename: data.filename,
-      file_type: file.name.split('.').pop(),
-      file_size_bytes: file.size,
-      pages_or_elements: Math.ceil(file.size / 50000),
-      detected_language: 'en',
+      task_id: data.file_id || 'legacy-' + Date.now(),
+      pages: data.pages || 100,
+      detected_language: data.document_language || 'EN',
+      size_mb: (file.size / 1024 / 1024).toFixed(1),
       suggested_plan: {
-        recommended_days: 14,
-        recommended_hours_per_day: 2.0,
-        total_hours: 28
+        days: data.recommended_days || 10,
+        hours_per_day: 3,
       },
-      estimated_processing_time_min: 5,
-      _legacy: true
+      estimated_processing_time_min: 15,
     };
-  }
-
-  async legacyAnalyze(fileId) {
-    const response = await fetch(`${API_BASE}/analyze/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file_id: fileId })
-    });
-
-    return response.json();
-  }
-
-  async legacyGetStatus(fileId) {
-    const response = await fetch(`${API_BASE}/analyze/legacy/status/${fileId}`);
-    return response.json();
-  }
-
-  async legacyGenerate(fileId, days, hoursPerDay) {
-    const response = await fetch(`${API_BASE}/generate/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        file_id: fileId,
-        days: days,
-        hours_per_day: hoursPerDay
-      })
-    });
-
-    return response.json();
   }
 }
 
