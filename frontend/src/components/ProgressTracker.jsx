@@ -51,7 +51,7 @@ export function ProgressTracker({
     if (!isProcessing) return;
 
     const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
+      const elapsed = Date.now() - startTimeRef.current;
       setElapsedTime(elapsed);
 
       // Show email modal after 5 minutes if not already shown
@@ -61,7 +61,7 @@ export function ProgressTracker({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isProcessing, startTime, emailRegistered, showEmailModal]);
+  }, [isProcessing, emailRegistered, showEmailModal]);
 
   const formatTime = (ms) => {
     const seconds = Math.floor(ms / 1000);
