@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -24,15 +23,25 @@ export function AnalysisSummaryModal({
   isGenerating = false
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
-  const [days, setDays] = useState(14);
-  const [hoursPerDay, setHoursPerDay] = useState(2);
+  
+  // Initialize with defaults, update when taskData changes via key prop
+  const initialDays = useMemo(() => 
+    taskData?.suggested_plan?.recommended_days || 14, 
+    [taskData?.suggested_plan?.recommended_days]
+  );
+  const initialHours = useMemo(() => 
+    taskData?.suggested_plan?.recommended_hours_per_day || 2, 
+    [taskData?.suggested_plan?.recommended_hours_per_day]
+  );
+  
+  const [days, setDays] = useState(initialDays);
+  const [hoursPerDay, setHoursPerDay] = useState(initialHours);
 
-  useEffect(() => {
-    if (taskData?.suggested_plan) {
-      setDays(taskData.suggested_plan.recommended_days || 14);
-      setHoursPerDay(taskData.suggested_plan.recommended_hours_per_day || 2);
-    }
-  }, [taskData]);
+  // Reset values when taskData changes
+  React.useEffect(() => {
+    setDays(initialDays);
+    setHoursPerDay(initialHours);
+  }, [initialDays, initialHours]);
 
   const formatFileSize = (bytes) => {
     if (!bytes) return 'Unknown';
