@@ -264,7 +264,7 @@ async def analyze_init(file: UploadFile = File(...)):
     if not is_allowed_file(file.filename):
         raise HTTPException(
             status_code=400, 
-            detail=f"Unsupported file type. Allowed: PDF, MP4, MP3, TXT"
+            detail="Unsupported file type. Allowed: PDF, MP4, MP3, TXT"
         )
     
     # Read file
