@@ -18,7 +18,7 @@ export function ResultDisplay({ taskData, taskStatus, onStartOver }) {
         </div>
         <CardTitle className="text-2xl">Your Study Plan is Ready!</CardTitle>
         <CardDescription>
-          We've generated a personalized study plan based on your material.
+          We have generated a personalized study plan based on your material.
         </CardDescription>
       </CardHeader>
 
