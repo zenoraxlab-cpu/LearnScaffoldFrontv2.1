@@ -24,7 +24,7 @@ import {
 export function AnalysisSummaryModal({
   open,
   onClose,
-  onStartGeneration, // НЕ МЕНЯЕМ
+  onStartGeneration,
   taskData,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
@@ -54,8 +54,10 @@ export function AnalysisSummaryModal({
   const handleGenerate = async () => {
     try {
       setLoading(true);
-      onClose();
-      onStartGeneration({
+
+      // 🔧 БЕЗОПАСНО
+      onClose?.();
+      onStartGeneration?.({
         taskId: taskData.task_id,
         days,
         hoursPerDay,
@@ -69,7 +71,7 @@ export function AnalysisSummaryModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose?.()}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -82,16 +84,13 @@ export function AnalysisSummaryModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* DOCUMENT INFO */}
           <Card>
             <CardContent className="pt-4 space-y-3">
               <Row
                 label="Type"
                 value={<Badge>{taskData.document_type || 'Document'}</Badge>}
               />
-
               <Row label="Pages" value={taskData.pages} />
-
               <Row label="Language" value={<Badge>EN</Badge>} />
 
               {taskData.summary && (
@@ -100,23 +99,9 @@ export function AnalysisSummaryModal({
                   <div className="mt-1">{taskData.summary}</div>
                 </div>
               )}
-
-              {taskData.main_topics?.length > 0 && (
-                <div className="pt-2">
-                  <div className="text-sm font-medium mb-1">Main topics</div>
-                  <div className="flex flex-wrap gap-2">
-                    {taskData.main_topics.slice(0, 5).map((t, i) => (
-                      <Badge key={i} variant="secondary">
-                        {t}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* ETA */}
           <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
             <Clock className="h-4 w-4" />
             <span className="text-sm">
@@ -127,7 +112,6 @@ export function AnalysisSummaryModal({
             </span>
           </div>
 
-          {/* PLAN */}
           {isCustomizing ? (
             <Card className="border-primary">
               <CardContent className="pt-4 space-y-4">
@@ -152,7 +136,6 @@ export function AnalysisSummaryModal({
                   min={1}
                   max={90}
                 />
-
                 <Control
                   label="Hours / day"
                   value={hoursPerDay}
@@ -192,7 +175,11 @@ export function AnalysisSummaryModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button
+            variant="outline"
+            onClick={() => onClose?.()}
+            disabled={loading}
+          >
             Cancel
           </Button>
           <Button onClick={handleGenerate} disabled={loading}>
