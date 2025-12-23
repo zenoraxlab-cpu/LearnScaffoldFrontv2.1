@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw } from 'lucide-react';
 import apiService from '@/services/api';
 
-export default function ProgressTracker({ taskId }) {
+eexport function ProgressTracker({ taskId }) {
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
