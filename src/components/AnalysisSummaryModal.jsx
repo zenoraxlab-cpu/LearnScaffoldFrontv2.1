@@ -1,35 +1,32 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Clock, Calendar, BookOpen, Loader2 } from 'lucide-react';
+import { FileText, Clock, Calendar, Loader2 } from 'lucide-react';
 
 export function AnalysisSummaryModal({
   open,
   onClose,
-  onGenerate, // ✅ ЕДИНСТВЕННАЯ функция
+  onGenerate,
   taskData,
+  isGenerating,
 }) {
-  const [isCustomizing, setIsCustomizing] = useState(false);
-  const [loading, setLoading] = useState(false);
-
   const initialDays = useMemo(
-    () => taskData?.suggested_plan?.days ?? 10,
+    () => taskData?.suggested_plan?.days || 10,
     [taskData],
   );
 
   const initialHours = useMemo(
-    () => taskData?.suggested_plan?.hours_per_day ?? 3,
+    () => taskData?.suggested_plan?.hours_per_day || 3,
     [taskData],
   );
 
@@ -45,21 +42,13 @@ export function AnalysisSummaryModal({
 
   const totalHours = days * hoursPerDay;
 
-  const handleGenerate = async () => {
-    setLoading(true);
-
-    try {
-      onClose(); // закрываем summary
-      onGenerate({
-        taskId: taskData.task_id,
-        days,
-        hoursPerDay,
-      });
-    } catch (e) {
-      console.error(e);
-      alert('Failed to start generation');
-      setLoading(false);
+  const handleGenerate = () => {
+    if (!taskData.task_id) {
+      alert('Task ID missing');
+      return;
     }
+
+    onGenerate(days, hoursPerDay);
   };
 
   return (
@@ -71,92 +60,60 @@ export function AnalysisSummaryModal({
             Analysis Summary
           </DialogTitle>
           <DialogDescription>
-            We have analyzed your file. Review the details below.
+            We analyzed your document. Review details below.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* FILE INFO */}
           <Card>
-            <CardContent className="pt-4 space-y-3">
+            <CardContent className="pt-4 space-y-2">
               <Row label="Pages" value={taskData.pages} />
               <Row label="Language" value={<Badge>EN</Badge>} />
-              {taskData.document_type && (
-                <Row label="Type" value={taskData.document_type} />
-              )}
-              {taskData.summary && (
-                <div className="text-sm text-muted-foreground pt-2">
-                  {taskData.summary}
-                </div>
-              )}
+              <Row label="Type" value={taskData.document_type || 'Document'} />
             </CardContent>
           </Card>
 
-          {/* ETA */}
-          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-muted rounded">
             <Clock className="h-4 w-4" />
-            <span className="text-sm">
-              Estimated processing time:{' '}
-              <strong>
-                {taskData.estimated_processing_time_min ?? 'minutes'}
-              </strong>
-            </span>
+            Estimated processing time: <b>minutes</b>
           </div>
 
-          {/* PLAN */}
-          {isCustomizing ? (
-            <Card className="border-primary">
-              <CardContent className="pt-4 space-y-4">
-                <Control
-                  label="Days"
-                  value={days}
-                  onChange={setDays}
-                  min={1}
-                  max={90}
-                />
-                <Control
-                  label="Hours per day"
-                  value={hoursPerDay}
-                  onChange={setHoursPerDay}
-                  min={1}
-                  max={12}
-                />
-                <div className="flex items-center gap-2 p-2 bg-primary/10 rounded">
-                  <BookOpen className="h-4 w-4" />
-                  Total: <strong>{totalHours} hours</strong>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="pt-4 flex justify-between items-center">
-                <div>
-                  <div className="font-medium flex gap-2 items-center">
-                    <Calendar className="h-4 w-4" />
-                    Suggested Plan
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {days} days × {hoursPerDay}h = {totalHours}h
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCustomizing(true)}
-                >
-                  Customize
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-center gap-2 font-medium">
+                <Calendar className="h-4 w-4" />
+                Suggested Plan
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                {days} days × {hoursPerDay}h = {totalHours}h
+              </div>
+
+              <Slider
+                min={1}
+                max={60}
+                step={1}
+                value={[days]}
+                onValueChange={([v]) => setDays(v)}
+              />
+
+              <Slider
+                min={1}
+                max={8}
+                step={1}
+                value={[hoursPerDay]}
+                onValueChange={([v]) => setHoursPerDay(v)}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button variant="outline" onClick={onClose} disabled={isGenerating}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate} disabled={loading}>
-            {loading ? (
+          <Button onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Starting…
@@ -173,27 +130,9 @@ export function AnalysisSummaryModal({
 
 function Row({ label, value }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="flex justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
       <span>{value}</span>
-    </div>
-  );
-}
-
-function Control({ label, value, onChange, min, max, step = 1 }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between">
-        <Label>{label}</Label>
-        <span className="font-medium">{value}</span>
-      </div>
-      <Slider
-        min={min}
-        max={max}
-        step={step}
-        value={[value]}
-        onValueChange={([v]) => onChange(v)}
-      />
     </div>
   );
 }
