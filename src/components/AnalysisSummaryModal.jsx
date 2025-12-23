@@ -24,18 +24,18 @@ import {
 export function AnalysisSummaryModal({
   open,
   onClose,
-  onStartGeneration, // 🔴 ВАЖНО
+  onStartGeneration, // НЕ МЕНЯЕМ
   taskData,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const initialDays = useMemo(
-    () => taskData?.suggested_plan?.days || 14,
+    () => taskData?.suggested_plan?.days || 7,
     [taskData],
   );
   const initialHours = useMemo(
-    () => taskData?.suggested_plan?.hours_per_day || 2,
+    () => taskData?.suggested_plan?.hours_per_day || 3,
     [taskData],
   );
 
@@ -54,8 +54,6 @@ export function AnalysisSummaryModal({
   const handleGenerate = async () => {
     try {
       setLoading(true);
-
-      // 🔴 ГЛАВНОЕ
       onClose();
       onStartGeneration({
         taskId: taskData.task_id,
@@ -72,7 +70,7 @@ export function AnalysisSummaryModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -84,13 +82,41 @@ export function AnalysisSummaryModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* DOCUMENT INFO */}
           <Card>
             <CardContent className="pt-4 space-y-3">
+              <Row
+                label="Type"
+                value={<Badge>{taskData.document_type || 'Document'}</Badge>}
+              />
+
               <Row label="Pages" value={taskData.pages} />
+
               <Row label="Language" value={<Badge>EN</Badge>} />
+
+              {taskData.summary && (
+                <div className="pt-2 text-sm text-muted-foreground">
+                  <strong>Description</strong>
+                  <div className="mt-1">{taskData.summary}</div>
+                </div>
+              )}
+
+              {taskData.main_topics?.length > 0 && (
+                <div className="pt-2">
+                  <div className="text-sm font-medium mb-1">Main topics</div>
+                  <div className="flex flex-wrap gap-2">
+                    {taskData.main_topics.slice(0, 5).map((t, i) => (
+                      <Badge key={i} variant="secondary">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* ETA */}
           <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
             <Clock className="h-4 w-4" />
             <span className="text-sm">
@@ -101,11 +127,15 @@ export function AnalysisSummaryModal({
             </span>
           </div>
 
+          {/* PLAN */}
           {isCustomizing ? (
             <Card className="border-primary">
               <CardContent className="pt-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Customize Plan</span>
+                  <span className="font-medium flex gap-2 items-center">
+                    <Settings2 className="h-4 w-4" />
+                    Customize Plan
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -129,7 +159,6 @@ export function AnalysisSummaryModal({
                   onChange={setHoursPerDay}
                   min={1}
                   max={12}
-                  step={1}
                 />
 
                 <div className="flex items-center gap-2 p-2 bg-primary/10 rounded">
