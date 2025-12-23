@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Clock, Calendar, BookOpen, Loader2 } from 'lucide-react';
+import { FileText, Clock, Calendar, BookOpen } from 'lucide-react';
 
 export function AnalysisSummaryModal({
   open,
@@ -21,14 +21,13 @@ export function AnalysisSummaryModal({
   taskData,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const initialDays = useMemo(
-    () => taskData?.suggested_plan?.days || 14,
+    () => taskData?.suggested_plan?.days || 10,
     [taskData],
   );
   const initialHours = useMemo(
-    () => taskData?.suggested_plan?.hours_per_day || 2,
+    () => taskData?.suggested_plan?.hours_per_day || 3,
     [taskData],
   );
 
@@ -45,17 +44,17 @@ export function AnalysisSummaryModal({
   const totalHours = days * hoursPerDay;
 
   const handleGenerate = () => {
-    setLoading(true);
+    // ✅ НИКАКОГО loading
+    // ✅ НИКАКИХ await
+    // ✅ Summary закрывается ВСЕГДА
+    onClose();
 
-    // ✅ СНАЧАЛА запускаем генерацию
+    // 🔥 передаём управление дальше
     onStartGeneration({
       taskId: taskData.task_id,
       days,
       hoursPerDay,
     });
-
-    // ✅ ПОТОМ закрываем summary
-    onClose();
   };
 
   return (
@@ -72,6 +71,7 @@ export function AnalysisSummaryModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* FILE INFO */}
           <Card>
             <CardContent className="pt-4 space-y-3">
               <Row label="Pages" value={taskData.pages} />
@@ -92,6 +92,7 @@ export function AnalysisSummaryModal({
             </CardContent>
           </Card>
 
+          {/* ETA */}
           <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
             <Clock className="h-4 w-4" />
             <span className="text-sm">
@@ -102,6 +103,7 @@ export function AnalysisSummaryModal({
             </span>
           </div>
 
+          {/* PLAN */}
           {isCustomizing ? (
             <Card className="border-primary">
               <CardContent className="pt-4 space-y-4">
@@ -164,19 +166,10 @@ export function AnalysisSummaryModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate} disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Starting…
-              </>
-            ) : (
-              'Generate Study Plan'
-            )}
-          </Button>
+          <Button onClick={handleGenerate}>Generate Study Plan</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
