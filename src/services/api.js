@@ -7,10 +7,6 @@ const BACKEND_URL =
 const API_BASE = BACKEND_URL;
 
 class ApiService {
-  constructor() {
-    this.useLegacyMode = false;
-  }
-
   // ====================
   // INIT
   // ====================
@@ -24,24 +20,38 @@ class ApiService {
     });
 
     if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ detail: 'Upload failed' }));
-      throw new Error(error.detail || 'Upload failed');
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Analyze init failed');
     }
 
-    return response.json();
+    const data = await response.json();
+
+    // 🔑 ВАЖНО: сохраняем ВСЮ инфу о документе
+    return {
+      task_id: data.task_id,
+      pages: data.pages,
+
+      document_type: data.document_type || '',
+      document_summary: data.document_summary || '',
+
+      suggested_plan: {
+        days: data.suggested_plan?.days || 10,
+        hours_per_day: data.suggested_plan?.hours_per_day || 3,
+      },
+
+      estimated_processing_time_min: data.estimated_processing_time_min || 15,
+    };
   }
 
   // ====================
-  // 🚀 GENERATE (КЛЮЧЕВОЙ ФИКС)
+  // GENERATE
   // ====================
   async startGeneration(taskId, days, language = 'ru') {
-    const response = await fetch(`${API_BASE}/generate`, {
+    const response = await fetch(`${API_BASE}/analyze/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        file_id: taskId, // 🔑 ВАЖНО
+        task_id: taskId, // ⬅️ ИМЕННО task_id
         days,
         language,
       }),
@@ -72,23 +82,6 @@ class ApiService {
   // ====================
   getDownloadUrl(taskId) {
     return `${API_BASE}/plan/${taskId}`;
-  }
-
-  // ====================
-  // EMAIL
-  // ====================
-  async registerEmailNotification(taskId, email) {
-    const response = await fetch(`${API_BASE}/notify/email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: taskId, email }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Email registration failed');
-    }
-
-    return response.json();
   }
 }
 
