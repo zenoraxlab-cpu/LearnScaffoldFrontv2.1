@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw } from 'lucide-react';
 import apiService from '@/services/api';
 
-eexport function ProgressTracker({ taskId }) {
+export function ProgressTracker({ taskId }) {
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
@@ -63,6 +63,7 @@ eexport function ProgressTracker({ taskId }) {
         )}
 
         <button
+          type="button"
           onClick={() => apiService.getTaskStatus(taskId).then(setStatus)}
           className="flex items-center gap-2 text-sm text-muted-foreground"
         >
