@@ -12,14 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  FileText,
-  Clock,
-  Calendar,
-  BookOpen,
-  Settings2,
-  Loader2,
-} from 'lucide-react';
+import { FileText, Clock, Calendar, BookOpen, Loader2 } from 'lucide-react';
 
 export function AnalysisSummaryModal({
   open,
@@ -31,11 +24,11 @@ export function AnalysisSummaryModal({
   const [loading, setLoading] = useState(false);
 
   const initialDays = useMemo(
-    () => taskData?.suggested_plan?.days || 7,
+    () => taskData?.suggested_plan?.days || 14,
     [taskData],
   );
   const initialHours = useMemo(
-    () => taskData?.suggested_plan?.hours_per_day || 3,
+    () => taskData?.suggested_plan?.hours_per_day || 2,
     [taskData],
   );
 
@@ -51,28 +44,23 @@ export function AnalysisSummaryModal({
 
   const totalHours = days * hoursPerDay;
 
-  const handleGenerate = async () => {
-    try {
-      setLoading(true);
+  const handleGenerate = () => {
+    setLoading(true);
 
-      // 🔧 БЕЗОПАСНО
-      onClose?.();
-      onStartGeneration?.({
-        taskId: taskData.task_id,
-        days,
-        hoursPerDay,
-      });
-    } catch (e) {
-      console.error(e);
-      alert('Failed to start generation');
-    } finally {
-      setLoading(false);
-    }
+    // ✅ СНАЧАЛА запускаем генерацию
+    onStartGeneration({
+      taskId: taskData.task_id,
+      days,
+      hoursPerDay,
+    });
+
+    // ✅ ПОТОМ закрываем summary
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose?.()}>
-      <DialogContent className="sm:max-w-[520px]">
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -86,18 +74,20 @@ export function AnalysisSummaryModal({
         <div className="space-y-4 py-4">
           <Card>
             <CardContent className="pt-4 space-y-3">
-              <Row
-                label="Type"
-                value={<Badge>{taskData.document_type || 'Document'}</Badge>}
-              />
               <Row label="Pages" value={taskData.pages} />
               <Row label="Language" value={<Badge>EN</Badge>} />
-
-              {taskData.summary && (
-                <div className="pt-2 text-sm text-muted-foreground">
-                  <strong>Description</strong>
-                  <div className="mt-1">{taskData.summary}</div>
-                </div>
+              {taskData.document_type && (
+                <Row label="Type" value={taskData.document_type} />
+              )}
+              {taskData.document_summary && (
+                <Row
+                  label="Description"
+                  value={
+                    <span className="text-sm text-muted-foreground">
+                      {taskData.document_summary}
+                    </span>
+                  }
+                />
               )}
             </CardContent>
           </Card>
@@ -116,10 +106,7 @@ export function AnalysisSummaryModal({
             <Card className="border-primary">
               <CardContent className="pt-4 space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium flex gap-2 items-center">
-                    <Settings2 className="h-4 w-4" />
-                    Customize Plan
-                  </span>
+                  <span className="font-medium">Customize Plan</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -136,12 +123,14 @@ export function AnalysisSummaryModal({
                   min={1}
                   max={90}
                 />
+
                 <Control
                   label="Hours / day"
                   value={hoursPerDay}
                   onChange={setHoursPerDay}
                   min={1}
                   max={12}
+                  step={1}
                 />
 
                 <div className="flex items-center gap-2 p-2 bg-primary/10 rounded">
@@ -175,11 +164,7 @@ export function AnalysisSummaryModal({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onClose?.()}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button onClick={handleGenerate} disabled={loading}>
@@ -200,9 +185,9 @@ export function AnalysisSummaryModal({
 
 function Row({ label, value }) {
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center gap-4">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span>{value}</span>
+      <span className="text-right">{value}</span>
     </div>
   );
 }
