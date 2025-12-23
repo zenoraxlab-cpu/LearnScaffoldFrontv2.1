@@ -81,7 +81,7 @@ class ApiService {
   // DOWNLOAD
   // ====================
   getDownloadUrl(taskId) {
-    return `${API_BASE}/plan/${taskId}`;
+    return `${API_BASE}/plan/pdf/${taskId}`;
   }
 }
 
