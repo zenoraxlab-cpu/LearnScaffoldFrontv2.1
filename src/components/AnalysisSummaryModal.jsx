@@ -12,22 +12,24 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Clock, Calendar, BookOpen } from 'lucide-react';
+import { FileText, Clock, Calendar, BookOpen, Loader2 } from 'lucide-react';
 
 export function AnalysisSummaryModal({
   open,
   onClose,
-  onStartGeneration,
+  onGenerate, // ✅ ЕДИНСТВЕННАЯ функция
   taskData,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const initialDays = useMemo(
-    () => taskData?.suggested_plan?.days || 10,
+    () => taskData?.suggested_plan?.days ?? 10,
     [taskData],
   );
+
   const initialHours = useMemo(
-    () => taskData?.suggested_plan?.hours_per_day || 3,
+    () => taskData?.suggested_plan?.hours_per_day ?? 3,
     [taskData],
   );
 
@@ -43,23 +45,26 @@ export function AnalysisSummaryModal({
 
   const totalHours = days * hoursPerDay;
 
-  const handleGenerate = () => {
-    // ✅ НИКАКОГО loading
-    // ✅ НИКАКИХ await
-    // ✅ Summary закрывается ВСЕГДА
-    onClose();
+  const handleGenerate = async () => {
+    setLoading(true);
 
-    // 🔥 передаём управление дальше
-    onStartGeneration({
-      taskId: taskData.task_id,
-      days,
-      hoursPerDay,
-    });
+    try {
+      onClose(); // закрываем summary
+      onGenerate({
+        taskId: taskData.task_id,
+        days,
+        hoursPerDay,
+      });
+    } catch (e) {
+      console.error(e);
+      alert('Failed to start generation');
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -79,15 +84,10 @@ export function AnalysisSummaryModal({
               {taskData.document_type && (
                 <Row label="Type" value={taskData.document_type} />
               )}
-              {taskData.document_summary && (
-                <Row
-                  label="Description"
-                  value={
-                    <span className="text-sm text-muted-foreground">
-                      {taskData.document_summary}
-                    </span>
-                  }
-                />
+              {taskData.summary && (
+                <div className="text-sm text-muted-foreground pt-2">
+                  {taskData.summary}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -98,7 +98,7 @@ export function AnalysisSummaryModal({
             <span className="text-sm">
               Estimated processing time:{' '}
               <strong>
-                {taskData.estimated_processing_time_min || 'minutes'}
+                {taskData.estimated_processing_time_min ?? 'minutes'}
               </strong>
             </span>
           </div>
@@ -107,17 +107,6 @@ export function AnalysisSummaryModal({
           {isCustomizing ? (
             <Card className="border-primary">
               <CardContent className="pt-4 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Customize Plan</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsCustomizing(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-
                 <Control
                   label="Days"
                   value={days}
@@ -125,16 +114,13 @@ export function AnalysisSummaryModal({
                   min={1}
                   max={90}
                 />
-
                 <Control
-                  label="Hours / day"
+                  label="Hours per day"
                   value={hoursPerDay}
                   onChange={setHoursPerDay}
                   min={1}
                   max={12}
-                  step={1}
                 />
-
                 <div className="flex items-center gap-2 p-2 bg-primary/10 rounded">
                   <BookOpen className="h-4 w-4" />
                   Total: <strong>{totalHours} hours</strong>
@@ -166,10 +152,19 @@ export function AnalysisSummaryModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate}>Generate Study Plan</Button>
+          <Button onClick={handleGenerate} disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Starting…
+              </>
+            ) : (
+              'Generate Study Plan'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -178,9 +173,9 @@ export function AnalysisSummaryModal({
 
 function Row({ label, value }) {
   return (
-    <div className="flex justify-between items-center gap-4">
+    <div className="flex justify-between items-center">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-right">{value}</span>
+      <span>{value}</span>
     </div>
   );
 }
