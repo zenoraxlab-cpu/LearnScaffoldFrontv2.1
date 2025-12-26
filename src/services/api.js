@@ -77,13 +77,29 @@ class ApiService {
     return response.json();
   }
 
+    // ====================
+  // DOWNLOAD (POST /plan/pdf)
   // ====================
-  // DOWNLOAD
-  // ====================
-  getDownloadUrl(taskId) {
-    return `${API_BASE}/plan/pdf/${taskId}`;
-  }
-}
+  async downloadPlanPdf(content) {
+    const response = await fetch(`${API_BASE}/plan/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
 
-export const apiService = new ApiService();
-export default apiService;
+    if (!response.ok) {
+      throw new Error('PDF generation failed');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'study-plan.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
