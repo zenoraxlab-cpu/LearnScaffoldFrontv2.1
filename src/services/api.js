@@ -26,19 +26,15 @@ class ApiService {
 
     const data = await response.json();
 
-    // 🔑 ВАЖНО: сохраняем ВСЮ инфу о документе
     return {
       task_id: data.task_id,
       pages: data.pages,
-
       document_type: data.document_type || '',
       document_summary: data.document_summary || '',
-
       suggested_plan: {
         days: data.suggested_plan?.days || 10,
         hours_per_day: data.suggested_plan?.hours_per_day || 3,
       },
-
       estimated_processing_time_min: data.estimated_processing_time_min || 15,
     };
   }
@@ -51,7 +47,7 @@ class ApiService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        task_id: taskId, // ⬅️ ИМЕННО task_id
+        task_id: taskId,
         days,
         language,
       }),
@@ -77,7 +73,7 @@ class ApiService {
     return response.json();
   }
 
-    // ====================
+  // ====================
   // DOWNLOAD (POST /plan/pdf)
   // ====================
   async downloadPlanPdf(content) {
@@ -102,4 +98,7 @@ class ApiService {
     a.remove();
     window.URL.revokeObjectURL(url);
   }
+}
 
+export const apiService = new ApiService();
+export default apiService;
