@@ -19,9 +19,17 @@ import apiService from '@/services/api';
 
 export function ResultDisplay({ taskData, taskStatus, onStartOver }) {
   const handleDownload = async () => {
-    await apiService.downloadPlanPdf(
-      'ТЕСТ PDF\nЕСЛИ ЭТО ВИДНО — КНОПКА DOWNLOAD РАБОТАЕТ',
-    );
+    try {
+      if (!taskData?.task_id) {
+        alert('Task ID not found');
+        return;
+      }
+
+      await apiService.downloadPlanPdf(taskData.task_id);
+    } catch (err) {
+      console.error('Download failed', err);
+      alert('Failed to download study plan');
+    }
   };
 
   return (
@@ -47,6 +55,7 @@ export function ResultDisplay({ taskData, taskStatus, onStartOver }) {
               </div>
               <div className="text-xs text-muted-foreground">Days</div>
             </div>
+
             <div className="text-center p-4 bg-muted rounded-lg">
               <Clock className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
               <div
@@ -60,6 +69,7 @@ export function ResultDisplay({ taskData, taskStatus, onStartOver }) {
               </div>
               <div className="text-xs text-muted-foreground">Per Day</div>
             </div>
+
             <div className="text-center p-4 bg-muted rounded-lg">
               <BookOpen className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
               <div
