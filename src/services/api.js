@@ -76,14 +76,18 @@ class ApiService {
   // ====================
   // DOWNLOAD (POST /plan/pdf)
   // ====================
-  async downloadPlanPdf(content) {
+  async downloadPlanPdf(taskId) {
     const response = await fetch(`${API_BASE}/plan/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        task_id: taskId,
+      }),
     });
 
     if (!response.ok) {
+      const text = await response.text();
+      console.error('PDF download failed:', response.status, text);
       throw new Error('PDF generation failed');
     }
 
@@ -96,6 +100,7 @@ class ApiService {
     document.body.appendChild(a);
     a.click();
     a.remove();
+
     window.URL.revokeObjectURL(url);
   }
 }
